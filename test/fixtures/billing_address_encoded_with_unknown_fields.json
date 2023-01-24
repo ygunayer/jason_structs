@@ -1,0 +1,11 @@
+{
+  "city": "Hill Valley, CA",
+  "streetAddressLineOne": "1640 Riverside Drive",
+  "postCode": "90999",
+  "country": {
+    "code": "us",
+    "name": "United States of America",
+    "bar": "baz"
+  },
+  "foo": 42
+}

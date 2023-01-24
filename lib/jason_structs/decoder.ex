@@ -9,19 +9,16 @@ defmodule Jason.Structs.Decoder do
   """
 
   @doc """
-  Decodes the passed iodata JSON to a struct of the given `struc_module` type.
+  Decodes the passed iodata JSON to a struct of the given `struct_module` type.
 
-  If the `struc_module` is passed as `nil`, the result is just a map.
+  If the `struct_module` is passed as `nil`, the result is just a map.
   """
-  @spec decode(json :: iodata(), struc_module :: module() | nil) ::
+  @spec decode(json :: iodata(), struct_module :: module() | nil) ::
           {:ok, map()} | {:error, term()}
-  def decode(json, struc_module \\ nil) do
+  def decode(json, struct_module \\ nil) do
     case Jason.decode(json) do
       {:ok, map} ->
-        result =
-          map
-          |> keys_to_snake_style_atoms()
-          |> to_struct(struc_module)
+        result = map_to_struct(map, struct_module)
 
         {:ok, result}
 
@@ -30,37 +27,60 @@ defmodule Jason.Structs.Decoder do
     end
   end
 
-  defp keys_to_snake_style_atoms(map) when is_map(map) do
+  def map_to_struct(map, nil), do: keys_to_snake_style_atoms(map, true)
+
+  def map_to_struct(map, struct_module) do
+    require_existing_atoms =
+      if Kernel.function_exported?(struct_module, :jason_struct_options, 0) do
+        Keyword.get(struct_module.jason_struct_options(), :require_existing_atoms, true)
+      else
+        false
+      end
+
+    map
+    |> keys_to_snake_style_atoms(require_existing_atoms)
+    |> to_struct(struct_module)
+  end
+
+  defp keys_to_snake_style_atoms(map, require_existing_atoms) when is_map(map) do
     Enum.reduce(map, %{}, fn {key, value}, acc ->
-      new_key = key |> Macro.underscore() |> String.to_existing_atom()
-      new_value = keys_to_snake_style_atoms(value)
+      new_key = key_to_snake_style_atom(key, require_existing_atoms)
+      new_value = keys_to_snake_style_atoms(value, require_existing_atoms)
 
       Map.put_new(acc, new_key, new_value)
     end)
   end
 
-  defp keys_to_snake_style_atoms(list) when is_list(list) do
-    Enum.map(list, fn entry -> keys_to_snake_style_atoms(entry) end)
+  defp keys_to_snake_style_atoms(list, require_existing_atoms) when is_list(list) do
+    Enum.map(list, fn entry -> keys_to_snake_style_atoms(entry, require_existing_atoms) end)
   end
 
-  defp keys_to_snake_style_atoms(value), do: value
+  defp keys_to_snake_style_atoms(value, _), do: value
+
+  defp key_to_snake_style_atom(key, require_existing_atoms) when is_atom(key),
+    do: key |> Atom.to_string() |> key_to_snake_style_atom(require_existing_atoms)
+
+  defp key_to_snake_style_atom(key, true),
+    do: key |> Macro.underscore() |> String.to_existing_atom()
+
+  defp key_to_snake_style_atom(key, false), do: key |> Macro.underscore() |> String.to_atom()
 
   defp to_struct(value, nil), do: value
 
-  defp to_struct(map, struc_module) when is_map(map) and is_atom(struc_module) do
+  defp to_struct(map, struct_module) when is_map(map) and is_atom(struct_module) do
     updated_map =
       Enum.reduce(map, %{}, fn {key, value}, acc ->
-        struct_m = Map.get(struc_module.sub_structs(), key)
-        type_info = Map.get(struc_module.type_data(), key)
+        struct_m = Map.get(struct_module.sub_structs(), key)
+        type_info = Map.get(struct_module.type_data(), key)
 
         Map.put_new(acc, key, to_struct(value, struct_m || type_info))
       end)
 
-    struct(struc_module, updated_map)
+    struct(struct_module, updated_map)
   end
 
-  defp to_struct(list, struc_module) when is_list(list) and is_atom(struc_module) do
-    Enum.map(list, fn entry -> to_struct(entry, struc_module) end)
+  defp to_struct(list, struct_module) when is_list(list) and is_atom(struct_module) do
+    Enum.map(list, fn entry -> to_struct(entry, struct_module) end)
   end
 
   # TODO validation, there is some problem in TypedStruct with sum of more than 3 values.

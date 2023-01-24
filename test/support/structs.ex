@@ -2,20 +2,20 @@ defmodule Country do
   use Jason.Structs.Struct
 
   jason_struct do
-    field(:code, String.t(), enforce: true)
-    field(:name, String.t(), enforce: true)
+    field(:code, String.t())
+    field(:name, String.t())
   end
 end
 
 defmodule Address do
   use Jason.Structs.Struct
 
-  jason_struct do
-    field(:city, String.t(), enforce: true)
-    field(:street_address_line_one, String.t(), enforce: true)
+  jason_struct require_existing_atoms: false do
+    field(:city, String.t())
+    field(:street_address_line_one, String.t())
     field(:street_address_line_two, String.t(), enforce: false, excludable: true)
     field(:post_code, String.t(), enforce: false)
-    field(:country, Country.t(), enforce: true)
+    field(:country, Country.t(), enforce: true, excludable: false)
   end
 end
 
@@ -23,8 +23,8 @@ defmodule Interest do
   use Jason.Structs.Struct
 
   jason_struct do
-    field(:name, String.t(), enforce: true)
-    field(:description, String.t(), enforce: true)
+    field(:name, String.t())
+    field(:description, String.t())
   end
 end
 
@@ -32,13 +32,13 @@ defmodule User do
   use Jason.Structs.Struct
 
   jason_struct do
-    field(:name, String.t(), enforce: true)
-    field(:age, integer(), enforce: true)
-    field(:sex, :male | :female, enforce: true, default: :female)
-    field(:address, Address.t(), enforce: true)
-    field(:interests, [Interest.t()], excludable: true, default: [])
-    field(:children, [User.t()], excludable: true)
-    field(:likes_json_structs, boolean(), default: true)
+    field(:name, String.t())
+    field(:age, integer())
+    field(:sex, :male | :female, default: :female)
+    field(:address, Address.t())
+    field(:interests, [Interest.t()], enforce: false, excludable: true, default: [])
+    field(:children, [User.t()], enforce: false, excludable: true)
+    field(:likes_json_structs, boolean(), enforce: false, default: true)
   end
 end
 
@@ -47,10 +47,10 @@ defmodule Billing do
     use Jason.Structs.Struct
 
     jason_struct do
-      field(:name, String.t(), enforce: true)
-      field(:quantity, float(), enforce: true)
-      field(:unit_price, float(), enforce: true)
-      field(:subtotal, float(), enforce: true)
+      field(:name, String.t())
+      field(:quantity, float())
+      field(:unit_price, float())
+      field(:subtotal, float())
     end
   end
 
@@ -60,10 +60,10 @@ defmodule Billing do
     alias Billing.InvoiceItem, as: Item
 
     jason_struct do
-      field(:period, String.t(), enforce: true)
-      field(:due_date, String.t(), enforce: true)
-      field(:items, [Item.t()], enforce: true)
-      field(:subtotal, float(), enforce: true)
+      field(:period, String.t())
+      field(:due_date, String.t())
+      field(:items, [Item.t()])
+      field(:subtotal, float())
     end
   end
 
@@ -73,11 +73,11 @@ defmodule Billing do
     alias Billing.Invoice
 
     jason_struct do
-      field(:id, String.t(), enforce: true)
-      field(:contact_name, String.t(), enforce: true)
-      field(:contact_email, String.t(), enforce: true)
-      field(:billing_address, Address.t(), enforce: true)
-      field(:latest_invoice, Invoice.t(), enforce: true)
+      field(:id, String.t())
+      field(:contact_name, String.t())
+      field(:contact_email, String.t())
+      field(:billing_address, Address.t())
+      field(:latest_invoice, Invoice.t())
     end
   end
 end

@@ -12,11 +12,13 @@ defmodule Jason.Structs.TypedStructPlugin do
 
   @impl true
   @spec init(keyword()) :: Macro.t()
-  defmacro init(_opts) do
+  defmacro init(opts) do
     quote do
       Module.register_attribute(__MODULE__, :sub_structs, accumulate: true)
       Module.register_attribute(__MODULE__, :excludable_keys, accumulate: true)
       Module.register_attribute(__MODULE__, :types_info, accumulate: true)
+
+      Module.put_attribute(__MODULE__, :jason_struct_options, unquote(opts))
 
       aliases =
         __ENV__.aliases
@@ -111,9 +113,14 @@ defmodule Jason.Structs.TypedStructPlugin do
         Map.new(@types_info)
       end
 
+      def jason_struct_options do
+        @jason_struct_options
+      end
+
       Module.delete_attribute(__MODULE__, :types_info)
       Module.delete_attribute(__MODULE__, :excludable_keys)
       Module.delete_attribute(__MODULE__, :sub_structs)
+      Module.delete_attribute(__MODULE__, :jason_struct_options)
       Module.delete_attribute(__MODULE__, :aliases)
     end
   end

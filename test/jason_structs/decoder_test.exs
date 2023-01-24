@@ -25,6 +25,14 @@ defmodule Jason.Structs.DecoderTest do
     assert account == DummyData.billing_account()
   end
 
+  test "ignores extra and unknown fields in the input when require_existing_atoms is false" do
+    {:ok, json} = File.read("test/fixtures/billing_address_encoded_with_unknown_fields.json")
+
+    {:ok, address} = Decoder.decode(json, Address)
+
+    assert address == DummyData.billing_account().billing_address
+  end
+
   test "decodes a JSON into a map if a struct is not passed" do
     {:ok, json} = File.read("test/fixtures/pesho_encoded.json")
 
@@ -76,5 +84,33 @@ defmodule Jason.Structs.DecoderTest do
              name: "Petur Petrov",
              sex: "male"
            }
+  end
+
+  test "converts the given map into a struct of the given type" do
+    {:ok, json} = File.read("test/fixtures/billing_address_encoded.json")
+    {:ok, map} = Jason.decode(json)
+
+    address = Decoder.map_to_struct(map, Address)
+
+    assert address == DummyData.billing_account().billing_address
+  end
+
+  test "returns a new map with snake_case atoms as keys if no struct module is given" do
+    expected = %{
+      city: "Hill Valley, CA",
+      street_address_line_one: "1640 Riverside Drive",
+      post_code: "90999",
+      country: %{
+        code: "us",
+        name: "United States of America"
+      }
+    }
+
+    {:ok, json} = File.read("test/fixtures/billing_address_encoded.json")
+    {:ok, map} = Jason.decode(json)
+
+    address = Decoder.map_to_struct(map, nil)
+
+    assert address == expected
   end
 end
